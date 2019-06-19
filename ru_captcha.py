@@ -1,29 +1,42 @@
 # -*- coding: utf-8 -*-
 
 from pydub import AudioSegment
+from captcha.image import ImageCaptcha
+import random
+import os
 
 
-def create_wave(path_to_wave_files,beep_file, captcha_text, output_file):
+SOUNDS_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'sounds/ru_digits/')
+TTF_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'ttf/')
+def generateCaptcha(output_file):
+
+    captcha_text = str(random.randint(1111,9999))
+
     # Загружам наш бип файл - используем чтобы обозначить начало и конец результирующего файла
-    beep = AudioSegment.from_wav(beep_file)
+    beep = AudioSegment.from_wav(SOUNDS_DIR + "beep.wav")
     sounds_cache = []
     # Загружаем наши цифры от 0 до 9
     for digit in range(10):
-        sounds_cache.append(AudioSegment.from_wav(path_to_wave_files + str(digit) + ".wav"))
+        sounds_cache.append(AudioSegment.from_wav(SOUNDS_DIR + str(digit) + ".wav"))
     # Начинаем собирать результирующий файл
     result = beep
     for char in captcha_text:
         result += sounds_cache[int(char)]
     result += beep
-    result.export(output_file, format="wav")
+    result.export(output_file + ".wav", format="wav")
 
+    #создаем графическую капчу
+    image = ImageCaptcha(fonts=[TTF_DIR + '1.ttf'])
+    data = image.generate(captcha_text)
+    image.write(captcha_text, output_file + ".png")
+    
+    return captcha_text
 
 def main():
-    path_to_wave_files = "sounds/ru_digits/"
-    beep_file = "sounds/beep.wav"
-    output_file = "output.wav"
 
-    create_wave(path_to_wave_files, beep_file, "4455", output_file)
+    output_file = "captcha"
+
+    captcha = generateCaptcha(output_file)
 
 
 if __name__ == "__main__":
